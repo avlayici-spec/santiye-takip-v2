@@ -47,6 +47,7 @@ export default function ClientPage({ initialCommissions, initialProjects, initia
   const [selectedExpenseSiteId, setSelectedExpenseSiteId] = useState<string>("ALL");
   const [selectedExpenseProjectId, setSelectedExpenseProjectId] = useState<string>("ALL");
   const [selectedExpenseCategoryId, setSelectedExpenseCategoryId] = useState<string>("ALL");
+  const [selectedExpensePaidBy, setSelectedExpensePaidBy] = useState<string>("ALL");
 
   // Sort projects: first by site name (if exists), then by project name
   const sortedProjects = [...initialProjects].sort((a, b) => {
@@ -274,7 +275,8 @@ export default function ClientPage({ initialCommissions, initialProjects, initia
 
     const matchesProject = selectedExpenseProjectId === "ALL" || exp.projectId === selectedExpenseProjectId;
     const matchesCategory = selectedExpenseCategoryId === "ALL" || exp.categoryId === selectedExpenseCategoryId;
-    return matchesSite && matchesProject && matchesCategory;
+    const matchesPaidBy = selectedExpensePaidBy === "ALL" || exp.paidBy === selectedExpensePaidBy;
+    return matchesSite && matchesProject && matchesCategory && matchesPaidBy;
   });
 
   const totalSiteExpenses = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
@@ -570,6 +572,18 @@ export default function ClientPage({ initialCommissions, initialProjects, initia
               {uniqueCategories.map(c => (
                 <option key={c.id as string} value={c.id as string}>{c.name}</option>
               ))}
+            </select>
+
+            {/* Ödemeyi / Harcamayı Yapan Seçimi */}
+            <select
+              className="w-full sm:w-48 px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none text-xs font-bold text-slate-700 bg-white cursor-pointer"
+              value={selectedExpensePaidBy}
+              onChange={(e) => setSelectedExpensePaidBy(e.target.value)}
+            >
+              <option value="ALL">🤝 Ödeyen: Tümü</option>
+              <option value="BIZ">🏢 Kendi Kasamız (Biz)</option>
+              <option value="ORTAK">🤝 Ortak Ödedi</option>
+              <option value="ORTAK_KASA">💰 Ortak Havuz Kasası</option>
             </select>
           </div>
         )}
@@ -1014,6 +1028,7 @@ export default function ClientPage({ initialCommissions, initialProjects, initia
                     <th className="p-4 border-b border-slate-100">Tarih</th>
                     <th className="p-4 border-b border-slate-100">Kategori / Alt Kategori</th>
                     <th className="p-4 border-b border-slate-100">Açıklama</th>
+                    <th className="p-4 border-b border-slate-100">Ödeyen Taraf</th>
                     <th className="p-4 border-b border-slate-100 text-right">Tutar</th>
                   </tr>
                 </thead>
@@ -1036,6 +1051,21 @@ export default function ClientPage({ initialCommissions, initialProjects, initia
                       <td className="p-4 text-slate-600">
                         {exp.description || "-"}
                       </td>
+                      <td className="p-4 whitespace-nowrap">
+                        {exp.paidBy === "ORTAK" ? (
+                          <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-[11px] font-extrabold flex items-center gap-1 w-fit">
+                            🤝 Ortak Ödedi
+                          </span>
+                        ) : exp.paidBy === "ORTAK_KASA" ? (
+                          <span className="px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg text-[11px] font-extrabold flex items-center gap-1 w-fit">
+                            💰 Ortak Kasa
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg text-[11px] font-extrabold flex items-center gap-1 w-fit">
+                            🏢 Bizim Kasa
+                          </span>
+                        )}
+                      </td>
                       <td className="p-4 text-right font-black text-slate-900 text-sm whitespace-nowrap">
                         {formatCurrency(exp.amount)}
                       </td>
@@ -1044,7 +1074,7 @@ export default function ClientPage({ initialCommissions, initialProjects, initia
 
                   {filteredExpenses.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="text-center py-16 text-slate-500 font-bold">
+                      <td colSpan={5} className="text-center py-16 text-slate-500 font-bold">
                         Arama kriterlerine uygun şantiye gideri bulunamadı.
                       </td>
                     </tr>
