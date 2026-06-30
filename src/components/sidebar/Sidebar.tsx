@@ -51,8 +51,9 @@ export function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
 
-  // Kullanıcının görebileceği menü öğeleri
+  // Kullanıcının görebileceği menü öğeleri (Ayarlar alt alanda gösterildiği için ana listeden çıkarılıyor)
   const visibleModules = MODULES.filter((mod) => {
+    if (mod.href === "/ayarlar") return false;
     if (sessionUser?.isAdmin) return true;
     try {
       const perms = JSON.parse(sessionUser?.permissions || "{}");
