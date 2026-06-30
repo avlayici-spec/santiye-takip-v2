@@ -97,6 +97,31 @@ export default function ClientPage({
     return `${monthNames[parseInt(month) - 1]} ${year}`;
   };
 
+  // --- HEDEF vs GERÇEKLEŞEN FİNANSAL BAROMETRE HESAPLAMALARI ---
+  // 1. Hedef Satış Cirosu (Tüm dairelerin tahmini veya gerçek satış fiyatı toplamı)
+  const targetRevenue = projects.reduce((sum, p) => {
+    const projUnits = p.units || [];
+    const unitsTotal = projUnits.reduce((uSum: number, u: any) => uSum + (u.salePrice || u.estimatedPrice || 0), 0);
+    return sum + unitsTotal;
+  }, 0);
+
+  // 2. Hedef Proje Maliyeti (Tüm projelerin girilen tahmini bütçe maliyeti)
+  const targetCost = projects.reduce((sum, p) => sum + (p.estimatedCost || 0), 0);
+
+  // 3. Hedef Net Kâr
+  const targetProfit = targetRevenue - targetCost;
+  const targetProfitMargin = targetRevenue > 0 ? ((targetProfit / targetRevenue) * 100).toFixed(1) : "0.0";
+
+  // 4. Gerçekleşen Harcama (Tüm şantiye/ofis giderleri)
+  const totalActualExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+  // 5. Gerçekleşen Kâr Durumu (Gerçekleşen Satış Cirosu - Gerçekleşen Gider)
+  const actualProfit = totalRevenue - totalActualExpense;
+
+  // İlerleme yüzdeleri
+  const revenueProgress = targetRevenue > 0 ? Math.min(Math.round((totalRevenue / targetRevenue) * 100), 100) : 0;
+  const costProgress = targetCost > 0 ? Math.round((totalActualExpense / targetCost) * 100) : 0;
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       <div>
@@ -145,6 +170,112 @@ export default function ClientPage({
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Hedef vs Gerçekleşen Finansal Barometre */}
+      <div className="premium-card p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl rounded-3xl border border-slate-700/80 animate-in fade-in">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-700/80">
+          <div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase tracking-wider mb-2">
+              🎯 STRATEJİK FİNANS BAROMETRESİ
+            </span>
+            <h2 className="text-xl font-black tracking-tight text-white mt-1">
+              Hedef (Bütçelenen) vs. Gerçekleşen Kârlılık Performansı
+            </h2>
+            <p className="text-xs text-slate-400 font-medium mt-0.5">
+              Tanımlanan daire satış hedefleri ile fiili harcamaların anlık karlılık kıyası
+            </p>
+          </div>
+          <div className="bg-slate-800/80 border border-slate-700 px-5 py-3 rounded-2xl flex flex-col items-end shrink-0">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Beklenen Kâr Marjı</span>
+            <span className="text-2xl font-black text-amber-400 mt-0.5">%{targetProfitMargin}</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-6">
+          {/* Sol Panel: Hedeflenen */}
+          <div className="bg-slate-800/50 border border-slate-700/60 p-5 rounded-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-700/50 pb-3">
+              <span className="text-xs font-black text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                📋 HEDEF / BÜTÇELENEN DURUM
+              </span>
+              <span className="text-[11px] font-bold text-slate-400">Tüm Projeler</span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                <span className="text-[10px] font-bold text-slate-400 block">Beklenen Satış Geliri</span>
+                <span className="text-lg font-black text-green-400 mt-0.5 block">{formatCurrency(targetRevenue)}</span>
+              </div>
+              <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                <span className="text-[10px] font-bold text-slate-400 block">Tahmini Proje Gideri</span>
+                <span className="text-lg font-black text-red-400 mt-0.5 block">{formatCurrency(targetCost)}</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-gradient-to-r from-amber-500/10 to-transparent rounded-xl border border-amber-500/30 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-amber-300 uppercase tracking-widest block">Öngörülen Net Kâr</span>
+                <span className="text-xl font-black text-white mt-0.5 block">{formatCurrency(targetProfit)}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] font-bold text-slate-400 block">Hedef Kar / Zarar</span>
+                <span className={`text-xs font-black px-2 py-0.5 rounded-full ${targetProfit >= 0 ? "bg-green-500/20 text-green-300" : "bg-red-500/20 text-red-300"}`}>
+                  {targetProfit >= 0 ? "KÂRLI PROJE" : "ZARAR RİSKİ"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Sağ Panel: Gerçekleşen */}
+          <div className="bg-slate-800/50 border border-slate-700/60 p-5 rounded-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-700/50 pb-3">
+              <span className="text-xs font-black text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                📈 GERÇEKLEŞEN (FİİLİ) DURUM
+              </span>
+              <span className="text-[11px] font-bold text-slate-400">Canlı Veri</span>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between text-xs font-bold mb-1">
+                  <span className="text-slate-300">Satış Geliri Gerçekleşmesi</span>
+                  <span className="text-green-400 font-black">{formatCurrency(totalRevenue)} ({revenueProgress}%)</span>
+                </div>
+                <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-500 rounded-full transition-all duration-500" style={{ width: `${revenueProgress}%` }} />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between text-xs font-bold mb-1">
+                  <span className="text-slate-300">Bütçe / Maliyet Kullanımı</span>
+                  <span className={`font-black ${costProgress > 100 ? "text-red-400" : "text-amber-400"}`}>
+                    {formatCurrency(totalActualExpense)} ({costProgress}%)
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-500 ${costProgress > 100 ? "bg-red-500" : "bg-amber-500"}`} style={{ width: `${Math.min(costProgress, 100)}%` }} />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-900/80 rounded-xl border border-slate-700 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Gerçekleşen Net Kâr / Nakit Fark</span>
+                <span className={`text-xl font-black mt-0.5 block ${actualProfit >= 0 ? "text-green-400" : "text-red-400"}`}>
+                  {formatCurrency(actualProfit)}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] font-bold text-slate-400 block">Anlık Durum</span>
+                <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${actualProfit >= 0 ? "bg-green-500/20 text-green-400 border border-green-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"}`}>
+                  {actualProfit >= 0 ? "POZİTİF BAKİYE" : "HARCAMA AĞIRLIKLI"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
