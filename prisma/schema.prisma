@@ -1,0 +1,386 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// 1. ŞANTİYE, PROJE (BLOK) VE BAĞIMSIZ BÖLÜM YÖNETİMİ
+// ----------------------------------------------------------------------------
+model Site {
+  id                String         @id @default(cuid())
+  name              String         // Şantiye Adı (Örn: Güneş Evleri)
+  location          String?        // Konum/Adres
+  status            String         @default("DEVAM_EDIYOR") // TAMAMLANDI, PLANLANIYOR, DEVAM_EDIYOR
+  startDate         DateTime?
+  endDate           DateTime?
+  
+  // Şantiye Bilgileri (Tüm alt bloklar için geçerli ortak bilgiler)
+  municipality      String?        // Belediye
+  neighborhood      String?        // Mahalle
+  island            String?        // Ada
+  parcel            String?        // Parsel
+  areaSize          Float?         // Arsa Alanı (m2)
+
+  // Yapım Modeli ve Ortaklık (JV)
+  constructionModel String         @default("ARSA_BIZIM") // ARSA_BIZIM, KAT_KARSILIGI, TAAHHUT
+  landownerShare    Float?         // Arsa Sahibi Payı %
+  isJointVenture    Boolean        @default(false)
+  partnerName       String?        // Ortak Firma / Kişi Adı
+  ourShare          Float          @default(100)
+  partnerShare      Float          @default(0)
+
+  projects          Project[]      // Alt bloklar (A Blok, B Blok vb.)
+  expenses          Expense[]      // Sadece bu şantiyenin ortak/genel giderleri
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model Project {
+  id                    String         @id @default(cuid())
+  name                  String         // Proje Adı/Blok Adı
+  ownerName             String?        // Mal Sahibi
+  type                  String         // Villa, Apartman vb.
+  totalConstructionArea Float?         // Toplam İnşaat Alanı (m2)
+  
+  siteId                String?        // Bağlı Olduğu Üst Şantiye
+  site                  Site?          @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
+  // Kat Bilgileri
+  basementCount         Int            @default(0) // Bodrum Kat Sayısı
+  basementType          String         @default("ORTAK_ALAN") // ORTAK_ALAN veya ZEMIN_BAĞLI
+  zeroCount             Int            @default(1) // Zemin Kat Sayısı
+  normalCount           Int            @default(0) // Normal Kat Sayısı
+  roofCount             Int            @default(0) // Çatı Katı Sayısı
+
+  startDate             DateTime?
+  endDate               DateTime?
+  estimatedEndDate      DateTime?      // Tahmini Bitiş Tarihi
+  estimatedCost         Float?         // Tahmini Toplam Maliyet (Genel Gider Oranı için)
+  
+  status                String         @default("DEVAM_EDIYOR") // TAMAMLANDI, PLANLANIYOR, DEVAM_EDIYOR
+  
+  // Yapım Modeli ve Ortaklık (JV)
+  constructionModel     String         @default("ARSA_BIZIM") // ARSA_BIZIM, KAT_KARSILIGI, TAAHHUT
+  landownerShare        Float?
+  isJointVenture        Boolean        @default(false)
+  partnerName           String?
+  ourShare              Float          @default(100)
+  partnerShare          Float          @default(0)
+
+  units                 Unit[]
+  expenses              Expense[]
+  contracts             SubcontractorContract[]
+
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+}
+
+model Unit {
+  id                String         @id @default(cuid())
+  projectId         String
+  project           Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  unitNumber        String         // Bağımsız Bölüm No
+  floorNumber       String         // Bulunduğu Kat
+  type              String?        // 2+1, 3+1 vb.
+  isDuplex          Boolean        @default(false)
+  linkedFloors      String?        // Bağlı katlar
+  netArea           Float?
+  brutArea          Float?
+  ownerType         String         @default("MUTEAHHIT") // ARSA_SAHIBI, MUTEAHHIT
+  
+  estimatedPrice    Float?         // Liste fiyatı
+  salePrice         Float?         // Gerçekleşen Satış Fiyatı
+  status            String         @default("SATILIK") // SATILIK, SATILDI, REZERVE
+  saleDate          DateTime?
+
+  customerId        String?
+  customer          Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  
+  paymentPlans      PaymentPlan[]
+  commissions       Commission[]   // Satış komisyonları
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// 2. MÜŞTERİ, SATIŞ VE KOMİSYON YÖNETİMİ
+// ----------------------------------------------------------------------------
+model Customer {
+  id                String         @id @default(cuid())
+  name              String
+  phone             String?
+  email             String?
+  notes             String?
+  specialDates      String?        // Doğum günü, yıldönümü (JSON string)
+  units             Unit[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model PaymentPlan {
+  id                String         @id @default(cuid())
+  unitId            String
+  unit              Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  dueDate           DateTime       // Vade Tarihi
+  amount            Float          // Vade Tutarı
+  isPaid            Boolean        @default(false)
+  paidAmount        Float          @default(0)
+  paidDate          DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model Commission {
+  id                String         @id @default(cuid())
+  unitId            String
+  unit              Unit           @relation(fields: [unitId], references: [id], onDelete: Cascade)
+  agentName         String         // Emlakçı / Temsilci Adı
+  amount            Float          // Komisyon Tutarı
+  isPaid            Boolean        @default(false)
+  paymentDate       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// 3. GİDER VE KATEGORİ YÖNETİMİ (DİNAMİK)
+// ----------------------------------------------------------------------------
+model ExpenseCategory {
+  id                String         @id @default(cuid())
+  name              String         // Kaba İnşaat, İnce İnşaat vb.
+  color             String         @default("blue")
+  subCategories     ExpenseSubCategory[]
+  expenses          Expense[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model ExpenseSubCategory {
+  id                String         @id @default(cuid())
+  name              String         // Demir, Beton, Boya vb.
+  categoryId        String
+  category          ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  expenses          Expense[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model Expense {
+  id                String         @id @default(cuid())
+  siteId            String?        // Eğer sadece şantiyeye ait ortak bir giderse (blok seçilmemişse)
+  site              Site?          @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  
+  projectId         String?        // Eğer belirli bir bloğa ait giderse (veya Null ise Merkez/Şantiye)
+  project           Project?       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  categoryId        String?
+  category          ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  subCategoryId     String?
+  subCategory       ExpenseSubCategory? @relation(fields: [subCategoryId], references: [id], onDelete: SetNull)
+
+  // Legacy fallback fields if categories are deleted or hardcoded
+  categoryName      String?
+  subCategoryName   String?
+  
+  amount            Float
+  date              DateTime       @default(now())
+  description       String?
+  expenseType       String         @default("SANTIYE") // SANTIYE, OFIS
+  
+  // Taşeron Hakedişi bağlantısı
+  subcontractorPaymentId String?   @unique
+  subcontractorPayment   SubcontractorPayment? @relation(fields: [subcontractorPaymentId], references: [id], onDelete: Cascade)
+
+  // Personel ödemesi ilişkisi
+  staffPayment      StaffPayment?
+
+  // Belge ve satıcı bilgileri
+  documentNo        String?        // Fiş/Belge Numarası
+  supplier          String?        // Kimden Alındığı (Satıcı/Firma/Kişi)
+
+  // Ödemeyi Yapan Taraf
+  paidBy            String         @default("BIZ") // BIZ, ORTAK, ORTAK_KASA
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// 4. OFİS VE PERSONEL YÖNETİMİ
+// ----------------------------------------------------------------------------
+model Staff {
+  id                String         @id @default(cuid())
+  firstName         String
+  lastName          String?
+  title             String?        // Şantiye Şefi, Muhasebe vb.
+  address           String?        // İkametgah adresi
+  salary            Float          // Net Maaş
+  insurancePremium  Float          @default(0) // SGK Prim Gideri
+  phone             String?
+  email             String?
+  staffType         String         @default("OFIS") // OFIS, SANTIYE
+  startDate         DateTime       @default(now())  // İşe giriş tarihi
+  endDate           DateTime?                       // İşten çıkış tarihi
+  
+  accruals          StaffAccrual[]
+  payments          StaffPayment[]
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model StaffAccrual {
+  id                String         @id @default(cuid())
+  staffId           String
+  staff             Staff          @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  period            String         // "2026-05" veya "Mayıs 2026"
+  salary            Float          // Net Maaş Tahakkuku
+  insurancePremium  Float          // SGK Prim Tahakkuku
+  
+  payments          StaffPayment[]
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  @@unique([staffId, period]) // Bir personele aynı dönem için sadece bir tahakkuk olabilir
+}
+
+model StaffPayment {
+  id                String         @id @default(cuid())
+  staffId           String
+  staff             Staff          @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  accrualId         String?
+  accrual           StaffAccrual?  @relation(fields: [accrualId], references: [id], onDelete: SetNull)
+  
+  amount            Float          // Ödenen Tutar
+  date              DateTime       @default(now())
+  description       String?
+  paymentType       String         @default("MAAS") // MAAS, SGK
+  
+  expenseId         String?        @unique
+  expense           Expense?       @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// 5. TAŞERON VE HAKEDİŞ YÖNETİMİ
+// ----------------------------------------------------------------------------
+model Subcontractor {
+  id                String         @id @default(cuid())
+  name              String         // Firma / Usta Adı
+  contactPerson     String?        // Yetkili
+  phone             String?
+  specialty         String?        // Kaba İnşaat, Sıva vb.
+  contracts         SubcontractorContract[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model SubcontractorContract {
+  id                String         @id @default(cuid())
+  projectId         String
+  project           Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  subcontractorId   String
+  subcontractor     Subcontractor  @relation(fields: [subcontractorId], references: [id], onDelete: Cascade)
+  
+  agreementType     String         @default("TOTAL") // TOTAL, M2
+  unitPrice         Float          @default(0)
+  estimatedM2       Float          @default(0)
+  totalAmount       Float          // Toplam Anlaşma (Alacak) Bedeli
+  
+  // Gelişmiş Hakediş Modülü Eklemeleri
+  guaranteeDeductionRate Float    @default(0) // Teminat kesintisi oranı % olarak (Örn: 10)
+  advancePayment         Float    @default(0) // Verilen avans
+  contractFileUrl        String?  // PDF dosya yolu
+  
+  description       String?
+  date              DateTime       @default(now())
+  
+  status            String         @default("AKTIF") // AKTIF, SONLANDIRILDI
+  terminationReason String?        // ANLASARAK, YARIM_BIRAKTI, IS_BITTI
+  terminationDate   DateTime?
+  
+  payments          SubcontractorPayment[]
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model SubcontractorPayment {
+  id                String         @id @default(cuid())
+  contractId        String
+  contract          SubcontractorContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  
+  // Gelişmiş Hakediş Modülü Eklemeleri
+  completionPercentage      Float?   // % Kaçı tamamlandı (Kümülatif)
+  grossAmount               Float?   // Brüt Hakediş Tutarı
+  guaranteeDeductionAmount  Float?   // Teminat Kesinti Tutarı
+  status                    String   @default("ODENDI") // SEF_ONAYI_BEKLIYOR, MUHASEBE_ONAYI_BEKLIYOR, ODENDI
+  
+  amount            Float          // Net Ödenecek/Ödenen Tutar
+  date              DateTime       @default(now())
+  description       String?
+  
+  expense           Expense?       // Bu ödeme aynı zamanda Gider tablosunda da var
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model CompanySettings {
+  id            String   @id @default("singleton")
+  name          String   @default("İnşaatTakip")
+  authorized    String?
+  phone         String?
+  email         String?
+  address       String?
+  taxOffice     String?
+  taxNo         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// 6. KULLANICI VE YETKİLENDİRME
+// ----------------------------------------------------------------------------
+model User {
+  id          String    @id @default(cuid())
+  name        String                          // Ad Soyad
+  username    String    @unique               // Kullanıcı Adı
+  password    String                          // Şifre (admin görebilir)
+  jobTitle    String?                         // Görev Tanımı
+  isAdmin     Boolean   @default(false)       // Admin mi?
+  isActive    Boolean   @default(true)        // Aktif mi?
+  permissions String    @default("{}")        // JSON: hangi modüllere erişebilir
+  lastLogin   DateTime?                       // Son giriş zamanı
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// ----------------------------------------------------------------------------
+// 7. YILLIK TAHMİNİ M2 BİRİM FİYATLARI
+// ----------------------------------------------------------------------------
+model EstimatedM2Price {
+  id        String   @id @default(cuid())
+  year      Int      // Yıl (Örn: 2026)
+  type      String   // İnşaat Türü (Apartman, Villa, Bitişik Villa, Ticari)
+  price     Float    // m2 Birim Fiyatı (TL)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([year, type])
+}
