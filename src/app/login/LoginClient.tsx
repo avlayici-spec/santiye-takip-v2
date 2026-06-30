@@ -35,253 +35,372 @@ export function LoginClient() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-bg-glow" />
-      <div className="login-card">
-        {/* Logo */}
-        <div className="login-logo">
-          <div className="login-logo-icon">
-            <Building2 size={32} className="text-white" />
+    <div className="split-layout">
+      {/* Sol Taraf - Kurumsal Marka Alanı */}
+      <div className="brand-section">
+        <div className="brand-overlay" />
+        <div className="brand-content">
+          <div className="brand-logo-wrap">
+            <Building2 className="brand-icon" size={42} />
           </div>
+          <h1 className="brand-title">HIZIR</h1>
+          <p className="brand-subtitle">İNŞAAT MÜHENDİSLİK MİMARLIK LTD. ŞTİ.</p>
+          <div className="brand-divider" />
+          <p className="brand-description">
+            Kurumsal Proje Yönetim ve Şantiye Takip Sistemi
+          </p>
         </div>
-
-        <h1 className="login-title">İnşaatTakip</h1>
-        <p className="login-subtitle">Sisteme giriş yapın</p>
-
-        <form onSubmit={handleSubmit} className="login-form">
-          {/* Kullanıcı Adı */}
-          <div className="login-field">
-            <label className="login-label">Kullanıcı Adı</label>
-            <div className="login-input-wrap">
-              <User size={16} className="login-input-icon" />
-              <input
-                id="login-username"
-                type="text"
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="kullanici.adi"
-                className="login-input"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Şifre */}
-          <div className="login-field">
-            <label className="login-label">Şifre</label>
-            <div className="login-input-wrap">
-              <Lock size={16} className="login-input-icon" />
-              <input
-                id="login-password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="login-input login-input-pw"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="login-eye-btn"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <div className="login-error">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="login-btn"
-          >
-            {loading ? (
-              <span className="login-spinner" />
-            ) : (
-              <LogIn size={18} />
-            )}
-            {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
-          </button>
-        </form>
-
-        <p className="login-footer">
-          İnşaat Yönetim Sistemi © 2026
-        </p>
       </div>
 
-      <style>{`
-        .login-page {
-          min-height: 100vh;
+      {/* Sağ Taraf - Giriş Formu */}
+      <div className="form-section">
+        <div className="form-container">
+          <div className="form-header">
+            <h2>Hoş Geldiniz</h2>
+            <p>Lütfen devam etmek için giriş yapın.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="input-group">
+              <label>Kullanıcı Adı</label>
+              <div className="input-wrapper">
+                <User className="input-icon" size={18} />
+                <input
+                  type="text"
+                  placeholder="Kullanıcı adınızı girin"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label>Şifre</label>
+              <div className="input-wrapper">
+                <Lock className="input-icon" size={18} />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="eye-button"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="submit-button"
+            >
+              {loading ? (
+                <div className="spinner" />
+              ) : (
+                <LogIn size={18} />
+              )}
+              {loading ? "Giriş Yapılıyor..." : "Giriş Yap"}
+            </button>
+          </form>
+
+          <div className="form-footer">
+            <p>© 2026 HIZIR İnşaat Mühendislik Mimarlık Ltd. Şti. Tüm hakları saklıdır.</p>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        /* Genel Düzen (Split Layout) */
+        .split-layout {
           display: flex;
-          align-items: center;
-          justify-content: center;
-          background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-          padding: 1rem;
+          min-height: 100vh;
+          width: 100%;
+          background: #ffffff;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Sol Taraf - Kurumsal Alan */
+        .brand-section {
+          flex: 1.25;
           position: relative;
+          background-color: #0f172a;
+          background-image: url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop');
+          background-size: cover;
+          background-position: center;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 4.5rem;
           overflow: hidden;
         }
-        .login-bg-glow {
+
+        .brand-overlay {
           position: absolute;
-          width: 600px;
-          height: 600px;
-          background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          pointer-events: none;
+          inset: 0;
+          background: linear-gradient(135deg, rgba(15, 23, 42, 0.93) 0%, rgba(15, 23, 42, 0.78) 100%);
+          z-index: 1;
         }
-        .login-card {
-          background: rgba(255,255,255,0.05);
-          backdrop-filter: blur(24px);
-          border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 24px;
-          padding: 2.5rem;
-          width: 100%;
-          max-width: 420px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 0;
+
+        .brand-content {
           position: relative;
-          box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+          z-index: 2;
+          max-width: 540px;
         }
-        .login-logo {
-          margin-bottom: 1rem;
-        }
-        .login-logo-icon {
-          width: 72px;
-          height: 72px;
-          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-          border-radius: 20px;
+
+        .brand-logo-wrap {
+          width: 84px;
+          height: 84px;
+          background: rgba(250, 204, 21, 0.12);
+          border: 1px solid rgba(250, 204, 21, 0.25);
+          border-radius: 22px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 8px 24px rgba(59,130,246,0.4);
+          margin-bottom: 2.25rem;
+          backdrop-filter: blur(12px);
+          box-shadow: 0 10px 25px rgba(234, 179, 8, 0.15);
         }
-        .login-title {
-          color: #f1f5f9;
-          font-size: 1.75rem;
-          font-weight: 800;
-          margin: 0 0 0.25rem;
-          letter-spacing: -0.03em;
+
+        .brand-icon {
+          color: #eab308;
         }
-        .login-subtitle {
+
+        .brand-title {
+          font-size: 3.75rem;
+          font-weight: 900;
+          color: #ffffff;
+          letter-spacing: -0.025em;
+          margin: 0 0 0.5rem 0;
+        }
+
+        .brand-subtitle {
+          font-size: 1.05rem;
+          font-weight: 700;
+          color: #eab308;
+          letter-spacing: 0.12em;
+          margin: 0 0 2rem 0;
+          line-height: 1.5;
+        }
+
+        .brand-divider {
+          width: 70px;
+          height: 4px;
+          background: #eab308;
+          border-radius: 2px;
+          margin-bottom: 2rem;
+        }
+
+        .brand-description {
+          font-size: 1.25rem;
           color: #94a3b8;
-          font-size: 0.9rem;
-          margin: 0 0 2rem;
+          line-height: 1.6;
+          font-weight: 300;
+          margin: 0;
         }
-        .login-form {
+
+        /* Sağ Taraf - Form Alanı */
+        .form-section {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #ffffff;
+          padding: 2rem;
+        }
+
+        .form-container {
           width: 100%;
+          max-width: 440px;
+        }
+
+        .form-header {
+          margin-bottom: 2.5rem;
+        }
+
+        .form-header h2 {
+          font-size: 2rem;
+          font-weight: 800;
+          color: #0f172a;
+          margin: 0 0 0.5rem 0;
+          letter-spacing: -0.02em;
+        }
+
+        .form-header p {
+          color: #64748b;
+          font-size: 1rem;
+          margin: 0;
+          font-weight: 500;
+        }
+
+        .auth-form {
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 1.5rem;
         }
-        .login-field {
+
+        .input-group {
           display: flex;
           flex-direction: column;
-          gap: 0.4rem;
+          gap: 0.5rem;
         }
-        .login-label {
-          color: #cbd5e1;
-          font-size: 0.8rem;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
+
+        .input-group label {
+          font-size: 0.875rem;
+          font-weight: 700;
+          color: #334155;
         }
-        .login-input-wrap {
+
+        .input-wrapper {
           position: relative;
           display: flex;
           align-items: center;
         }
-        .login-input-icon {
+
+        .input-icon {
           position: absolute;
-          left: 14px;
-          color: #64748b;
+          left: 16px;
+          color: #94a3b8;
           pointer-events: none;
         }
-        .login-input {
+
+        .input-wrapper input {
           width: 100%;
-          background: rgba(255,255,255,0.07);
-          border: 1px solid rgba(255,255,255,0.12);
-          border-radius: 12px;
-          padding: 0.75rem 0.75rem 0.75rem 2.75rem;
-          color: #f1f5f9;
-          font-size: 0.95rem;
+          padding: 1rem 1rem 1rem 3rem;
+          background: #f8fafc;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 14px;
+          font-size: 1rem;
+          color: #0f172a;
+          font-weight: 500;
+          transition: all 0.2s ease;
           outline: none;
-          transition: border-color 0.2s, background 0.2s;
         }
-        .login-input::placeholder { color: #475569; }
-        .login-input:focus {
-          border-color: #3b82f6;
-          background: rgba(59,130,246,0.08);
+
+        .input-wrapper input:focus {
+          background: #ffffff;
+          border-color: #eab308;
+          box-shadow: 0 0 0 4px rgba(234, 179, 8, 0.15);
         }
-        .login-input-pw { padding-right: 3rem; }
-        .login-eye-btn {
+
+        .input-wrapper input::placeholder {
+          color: #94a3b8;
+          font-weight: 400;
+        }
+
+        .eye-button {
           position: absolute;
-          right: 12px;
+          right: 16px;
           background: none;
           border: none;
-          color: #64748b;
+          color: #94a3b8;
           cursor: pointer;
           padding: 4px;
-          display: flex;
-          align-items: center;
           transition: color 0.2s;
-        }
-        .login-eye-btn:hover { color: #94a3b8; }
-        .login-error {
-          background: rgba(239,68,68,0.15);
-          border: 1px solid rgba(239,68,68,0.3);
-          border-radius: 10px;
-          padding: 0.65rem 1rem;
-          color: #fca5a5;
-          font-size: 0.875rem;
-          text-align: center;
-        }
-        .login-btn {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 0.5rem;
-          background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-          color: white;
+        }
+
+        .eye-button:hover {
+          color: #475569;
+        }
+
+        .error-message {
+          background: #fef2f2;
+          color: #b91c1c;
+          padding: 1rem;
+          border-radius: 14px;
+          font-size: 0.875rem;
+          font-weight: 600;
+          border: 1px solid #fecaca;
+        }
+
+        .submit-button {
+          margin-top: 0.5rem;
+          width: 100%;
+          padding: 1.125rem;
+          background: #0f172a;
+          color: #ffffff;
           border: none;
-          border-radius: 12px;
-          padding: 0.875rem;
-          font-size: 1rem;
+          border-radius: 14px;
+          font-size: 1.05rem;
           font-weight: 700;
           cursor: pointer;
-          margin-top: 0.5rem;
-          transition: transform 0.15s, box-shadow 0.15s;
-          box-shadow: 0 4px 16px rgba(59,130,246,0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.6rem;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.2);
         }
-        .login-btn:hover:not(:disabled) {
+
+        .submit-button:hover:not(:disabled) {
+          background: #1e293b;
           transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(59,130,246,0.45);
+          box-shadow: 0 6px 20px rgba(15, 23, 42, 0.25);
         }
-        .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
-        .login-spinner {
-          width: 18px;
-          height: 18px;
+
+        .submit-button:active:not(:disabled) {
+          transform: translateY(0);
+        }
+
+        .submit-button:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+
+        .spinner {
+          width: 20px;
+          height: 20px;
           border: 2px solid rgba(255,255,255,0.3);
-          border-top-color: white;
+          border-top-color: #ffffff;
           border-radius: 50%;
-          animation: spin 0.7s linear infinite;
+          animation: spin 0.8s linear infinite;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .login-footer {
-          color: #475569;
-          font-size: 0.78rem;
-          margin-top: 2rem;
+
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+
+        .form-footer {
+          margin-top: 3.5rem;
+          text-align: center;
+          color: #94a3b8;
+          font-size: 0.8rem;
+          font-weight: 500;
+        }
+
+        /* Mobil Uyum */
+        @media (max-width: 900px) {
+          .split-layout {
+            flex-direction: column;
+          }
+          .brand-section {
+            padding: 3rem 2rem;
+            flex: none;
+            min-height: 280px;
+          }
+          .brand-title {
+            font-size: 2.75rem;
+          }
+          .form-section {
+            padding: 2.5rem 1.5rem;
+            align-items: flex-start;
+          }
         }
       `}</style>
     </div>
